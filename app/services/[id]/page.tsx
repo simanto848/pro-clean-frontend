@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -62,18 +63,21 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
       return;
     }
 
-    const bookingDateStr = date.toISOString().split('T')[0];
     const [h, m, p] = [timeSlot.substring(0, 2), timeSlot.substring(3, 5), timeSlot.substring(6, 8)];
     let hours = parseInt(h);
     if (p === "PM" && hours < 12) hours += 12;
     if (p === "AM" && hours === 12) hours = 0;
     
-    const bookingDateTime = new Date(`${bookingDateStr}T${hours.toString().padStart(2, '0')}:${m}:00`);
+    // Create a local date-time object for validation
+    const bookingDateTime = new Date(date);
+    bookingDateTime.setHours(hours, parseInt(m), 0, 0);
     
     if (bookingDateTime < new Date()) {
       toast.error("Cannot book in the past. Please select a future time.");
       return;
     }
+
+    const bookingDateStr = format(date, "yyyy-MM-dd");
 
     try {
       setBookingLoading(true);
