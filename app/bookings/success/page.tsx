@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, ArrowRight, Home, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 
-export default function BookingSuccessPage() {
+function BookingSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
@@ -165,3 +165,16 @@ export default function BookingSuccessPage() {
     </div>
   );
 }
+
+export default function BookingSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    }>
+      <BookingSuccessContent />
+    </Suspense>
+  );
+}
+
