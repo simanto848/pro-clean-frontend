@@ -84,6 +84,7 @@ export default function AdminDashboardPage() {
 
   // Validation errors
   const [serviceErrors, setServiceErrors] = useState<Record<string, string>>({});
+  const [editServiceErrors, setEditServiceErrors] = useState<Record<string, string>>({});
   const [adminErrors, setAdminErrors] = useState<Record<string, string>>({});
 
   // New Admin state
@@ -241,8 +242,19 @@ export default function AdminDashboardPage() {
     setEditServiceFile(null);
   };
 
+  const validateEditServiceForm = () => {
+    const errors: Record<string, string> = {};
+    if (!editServiceName.trim()) errors.name = "Service name is required";
+    if (!editServiceDesc.trim()) errors.description = "Description is required";
+    if (!editServicePrice || Number(editServicePrice) <= 0) errors.price = "Price must be greater than 0";
+    if (!editServiceDuration || Number(editServiceDuration) <= 0) errors.duration = "Duration must be greater than 0";
+    setEditServiceErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleUpdateService = async () => {
     if (!editingService) return;
+    if (!validateEditServiceForm()) return;
     setIsUpdatingService(true);
     try {
       const formData = new FormData();
@@ -266,6 +278,7 @@ export default function AdminDashboardPage() {
         setServices(services.map(s => s._id === editingService._id ? res.data.data : s));
         setEditingService(null);
         setEditServiceFile(null);
+        setEditServiceErrors({});
       }
     } catch (error) {
       toast.error("Failed to update service");
@@ -663,8 +676,14 @@ export default function AdminDashboardPage() {
                             <DialogDescription>Update the details for "{service.name}"</DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4 py-4">
-                            <Input placeholder="Service Name" value={editServiceName} onChange={e => setEditServiceName(e.target.value)} />
-                            <Input placeholder="Description" value={editServiceDesc} onChange={e => setEditServiceDesc(e.target.value)} />
+                            <div>
+                              <Input placeholder="Service Name" value={editServiceName} onChange={e => setEditServiceName(e.target.value)} className={editServiceErrors.name ? 'border-destructive' : ''} />
+                              {editServiceErrors.name && <p className="text-xs text-destructive mt-1">{editServiceErrors.name}</p>}
+                            </div>
+                            <div>
+                              <Input placeholder="Description" value={editServiceDesc} onChange={e => setEditServiceDesc(e.target.value)} className={editServiceErrors.description ? 'border-destructive' : ''} />
+                              {editServiceErrors.description && <p className="text-xs text-destructive mt-1">{editServiceErrors.description}</p>}
+                            </div>
                             <select
                               value={editServiceCategory}
                               onChange={e => setEditServiceCategory(e.target.value)}
@@ -677,8 +696,14 @@ export default function AdminDashboardPage() {
                               <option value="Other">Other</option>
                             </select>
                             <div className="flex gap-4">
-                              <Input type="number" placeholder="Price ($)" value={editServicePrice} onChange={e => setEditServicePrice(e.target.value)} />
-                              <Input type="number" placeholder="Duration (mins)" value={editServiceDuration} onChange={e => setEditServiceDuration(e.target.value)} />
+                              <div className="flex-1">
+                                <Input type="number" placeholder="Price ($)" value={editServicePrice} onChange={e => setEditServicePrice(e.target.value)} className={editServiceErrors.price ? 'border-destructive' : ''} />
+                                {editServiceErrors.price && <p className="text-xs text-destructive mt-1">{editServiceErrors.price}</p>}
+                              </div>
+                              <div className="flex-1">
+                                <Input type="number" placeholder="Duration (mins)" value={editServiceDuration} onChange={e => setEditServiceDuration(e.target.value)} className={editServiceErrors.duration ? 'border-destructive' : ''} />
+                                {editServiceErrors.duration && <p className="text-xs text-destructive mt-1">{editServiceErrors.duration}</p>}
+                              </div>
                             </div>
 
                             <div className="space-y-2">
@@ -702,7 +727,7 @@ export default function AdminDashboardPage() {
                               </div>
                             )}
                             <Button onClick={handleUpdateService} className="w-full" disabled={isUpdatingService}>
-                              {isUpdatingService ? "Updating..." : "Update Service"}
+                              {isUpdatingService ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...</> : 'Update Service'}
                             </Button>
                           </div>
                         </DialogContent>

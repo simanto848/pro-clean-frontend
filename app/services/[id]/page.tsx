@@ -195,20 +195,20 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
             </p>
 
             {/* Dev-only Stripe test card guide */}
-            {isDev && (
-              <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-2">
-                <div className="flex items-center gap-2 font-semibold text-amber-600 dark:text-amber-400">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  Dev: Stripe Test Cards
-                </div>
-                <div className="space-y-1 text-muted-foreground">
-                  <p>✅ Success: <code className="bg-background/60 px-1.5 py-0.5 rounded font-mono text-[11px]">4242 4242 4242 4242</code></p>
-                  <p>❌ Decline: <code className="bg-background/60 px-1.5 py-0.5 rounded font-mono text-[11px]">4000 0000 0000 0002</code></p>
-                  <p>⚠️ 3DS Auth: <code className="bg-background/60 px-1.5 py-0.5 rounded font-mono text-[11px]">4000 0025 0000 3155</code></p>
-                  <p className="pt-1 italic">Use any future exp date, any 3-digit CVC, any ZIP.</p>
-                </div>
+            {/* {isDev && ( */}
+            <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Dev: Stripe Test Cards
               </div>
-            )}
+              <div className="space-y-1 text-muted-foreground">
+                <p>✅ Success: <code className="bg-background/60 px-1.5 py-0.5 rounded font-mono text-[11px]">4242 4242 4242 4242</code></p>
+                <p>❌ Decline: <code className="bg-background/60 px-1.5 py-0.5 rounded font-mono text-[11px]">4000 0000 0000 0002</code></p>
+                <p>⚠️ 3DS Auth: <code className="bg-background/60 px-1.5 py-0.5 rounded font-mono text-[11px]">4000 0025 0000 3155</code></p>
+                <p className="pt-1 italic">Use any future exp date, any 3-digit CVC, any ZIP.</p>
+              </div>
+            </div>
+            {/* )} */}
           </div>
         </div>
       </motion.div>

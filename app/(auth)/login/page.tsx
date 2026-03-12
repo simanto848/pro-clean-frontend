@@ -160,7 +160,30 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-8 text-center text-sm text-muted-foreground">
+            {/* Demo Admin Credentials */}
+            <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
+              <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                <Sparkles className="h-4 w-4" /> Demo Admin Credentials
+              </p>
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <p>Email: <code className="bg-background/60 px-1.5 py-0.5 rounded font-mono text-xs">super_admin@email.com</code></p>
+                <p>Password: <code className="bg-background/60 px-1.5 py-0.5 rounded font-mono text-xs">12345678</code></p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full border-primary/20 hover:bg-primary/5 text-primary"
+                onClick={() => {
+                  form.setValue("email", "super_admin@email.com");
+                  form.setValue("password", "12345678");
+                }}
+              >
+                Use Admin Credentials
+              </Button>
+            </div>
+
+            <div className="mt-6 text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link href="/signup" className="font-semibold text-primary hover:text-primary/80 transition-colors">
                 Create an account
