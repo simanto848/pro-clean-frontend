@@ -75,6 +75,16 @@ export default function AdminDashboardPage() {
   const [usersList, setUsersList] = useState<UserData[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [creatingService, setCreatingService] = useState(false);
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
+  const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
+
+  // Validation errors
+  const [serviceErrors, setServiceErrors] = useState<Record<string, string>>({});
+  const [adminErrors, setAdminErrors] = useState<Record<string, string>>({});
 
   // New Admin state
   const [newAdminName, setNewAdminName] = useState("");
@@ -159,16 +169,31 @@ export default function AdminDashboardPage() {
   }, [isInitialized, isAuthenticated, user, router]);
 
   const handleUpdateStatus = async (bookingId: string, status: string) => {
+    setUpdatingStatusId(bookingId);
     try {
       await api.patch(`/bookings/${bookingId}/status`, { status });
       toast.success("Booking status updated");
       setBookings(bookings.map(b => b._id === bookingId ? { ...b, status } : b));
     } catch (error) {
       toast.error("Failed to update status");
+    } finally {
+      setUpdatingStatusId(null);
     }
   };
 
+  const validateServiceForm = () => {
+    const errors: Record<string, string> = {};
+    if (!newServiceName.trim()) errors.name = "Service name is required";
+    if (!newServiceDesc.trim()) errors.description = "Description is required";
+    if (!newServicePrice || Number(newServicePrice) <= 0) errors.price = "Price must be greater than 0";
+    if (!newServiceDuration || Number(newServiceDuration) <= 0) errors.duration = "Duration must be greater than 0";
+    setServiceErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCreateService = async () => {
+    if (!validateServiceForm()) return;
+    setCreatingService(true);
     try {
       const formData = new FormData();
       formData.append("name", newServiceName);
@@ -189,7 +214,6 @@ export default function AdminDashboardPage() {
       if (res.data.success) {
         toast.success("Service created");
         setServices([...services, res.data.data]);
-        // Reset form
         setNewServiceName("");
         setNewServiceDesc("");
         setNewServicePrice("");
@@ -197,9 +221,12 @@ export default function AdminDashboardPage() {
         setNewServiceCategory("Standard Cleaning");
         setNewServiceImage("");
         setNewServiceFile(null);
+        setServiceErrors({});
       }
-    } catch (error) {
-      toast.error("Failed to create service");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to create service");
+    } finally {
+      setCreatingService(false);
     }
   };
 
@@ -248,6 +275,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleUpdateUserRole = async (userId: string, role: string) => {
+    setUpdatingRoleId(userId);
     try {
       await api.patch(`/users/${userId}/role`, { role });
       toast.success("User role updated successfully");
@@ -258,11 +286,15 @@ export default function AdminDashboardPage() {
       } else {
         toast.error("Failed to update role");
       }
+    } finally {
+      setUpdatingRoleId(null);
     }
   };
 
+
   const handleDeleteUser = async (userId: string) => {
     if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+    setDeletingUserId(userId);
     try {
       await api.delete(`/users/${userId}`);
       toast.success("User deleted successfully");
@@ -273,20 +305,39 @@ export default function AdminDashboardPage() {
       } else {
         toast.error("Failed to delete user");
       }
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
   const handleDeleteService = async (serviceId: string) => {
+    if (!confirm("Are you sure you want to delete this service?")) return;
+    setDeletingServiceId(serviceId);
     try {
       await api.delete(`/services/${serviceId}`);
       toast.success("Service deleted");
       setServices(services.filter(s => s._id !== serviceId));
     } catch (error) {
       toast.error("Failed to delete service");
+    } finally {
+      setDeletingServiceId(null);
     }
   };
 
+  const validateAdminForm = () => {
+    const errors: Record<string, string> = {};
+    if (!newAdminName.trim()) errors.name = "Name is required";
+    if (!newAdminEmail.trim()) errors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newAdminEmail)) errors.email = "Invalid email format";
+    if (!newAdminPassword) errors.password = "Password is required";
+    else if (newAdminPassword.length < 6) errors.password = "Min 6 characters";
+    setAdminErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCreateAdmin = async () => {
+    if (!validateAdminForm()) return;
+    setCreatingAdmin(true);
     try {
       const res = await api.post("/auth/create-admin", {
         name: newAdminName,
@@ -298,6 +349,7 @@ export default function AdminDashboardPage() {
         setNewAdminName("");
         setNewAdminEmail("");
         setNewAdminPassword("");
+        setAdminErrors({});
       }
     } catch (error: Error | unknown) {
       if (error && typeof error === 'object' && 'response' in error) {
@@ -305,6 +357,8 @@ export default function AdminDashboardPage() {
       } else {
         toast.error("Failed to create admin");
       }
+    } finally {
+      setCreatingAdmin(false);
     }
   };
 
@@ -332,10 +386,21 @@ export default function AdminDashboardPage() {
                 <DialogDescription>Create a new administrator account with full platform access.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <Input placeholder="Full Name" value={newAdminName} onChange={e => setNewAdminName(e.target.value)} />
-                <Input type="email" placeholder="Email Address" value={newAdminEmail} onChange={e => setNewAdminEmail(e.target.value)} />
-                <Input type="password" placeholder="Secure Password" value={newAdminPassword} onChange={e => setNewAdminPassword(e.target.value)} />
-                <Button onClick={handleCreateAdmin} className="w-full mt-4">Create Admin Account</Button>
+                <div>
+                  <Input placeholder="Full Name" value={newAdminName} onChange={e => setNewAdminName(e.target.value)} className={adminErrors.name ? 'border-destructive' : ''} />
+                  {adminErrors.name && <p className="text-xs text-destructive mt-1">{adminErrors.name}</p>}
+                </div>
+                <div>
+                  <Input type="email" placeholder="Email Address" value={newAdminEmail} onChange={e => setNewAdminEmail(e.target.value)} className={adminErrors.email ? 'border-destructive' : ''} />
+                  {adminErrors.email && <p className="text-xs text-destructive mt-1">{adminErrors.email}</p>}
+                </div>
+                <div>
+                  <Input type="password" placeholder="Secure Password" value={newAdminPassword} onChange={e => setNewAdminPassword(e.target.value)} className={adminErrors.password ? 'border-destructive' : ''} />
+                  {adminErrors.password && <p className="text-xs text-destructive mt-1">{adminErrors.password}</p>}
+                </div>
+                <Button onClick={handleCreateAdmin} className="w-full mt-4" disabled={creatingAdmin}>
+                  {creatingAdmin ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 'Create Admin Account'}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -451,16 +516,20 @@ export default function AdminDashboardPage() {
                     <span className="text-sm font-medium capitalize px-2 py-1 bg-muted rounded">
                       {booking.status}
                     </span>
-                    <select
-                      className="text-sm border rounded p-1 bg-background"
-                      value={booking.status}
-                      onChange={(e) => handleUpdateStatus(booking._id, e.target.value)}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
+                    {updatingStatusId === booking._id ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : (
+                      <select
+                        className="text-sm border rounded p-1 bg-background"
+                        value={booking.status}
+                        onChange={(e) => handleUpdateStatus(booking._id, e.target.value)}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    )}
                   </div>
                 </Card>
               ))
@@ -482,8 +551,14 @@ export default function AdminDashboardPage() {
                   <DialogDescription>Fill in the details for the new service offering.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  <Input placeholder="Service Name" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} />
-                  <Input placeholder="Description" value={newServiceDesc} onChange={e => setNewServiceDesc(e.target.value)} />
+                  <div>
+                    <Input placeholder="Service Name" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} className={serviceErrors.name ? 'border-destructive' : ''} />
+                    {serviceErrors.name && <p className="text-xs text-destructive mt-1">{serviceErrors.name}</p>}
+                  </div>
+                  <div>
+                    <Input placeholder="Description" value={newServiceDesc} onChange={e => setNewServiceDesc(e.target.value)} className={serviceErrors.description ? 'border-destructive' : ''} />
+                    {serviceErrors.description && <p className="text-xs text-destructive mt-1">{serviceErrors.description}</p>}
+                  </div>
                   <select
                     value={newServiceCategory}
                     onChange={e => setNewServiceCategory(e.target.value)}
@@ -496,8 +571,14 @@ export default function AdminDashboardPage() {
                     <option value="Other">Other</option>
                   </select>
                   <div className="flex gap-4">
-                    <Input type="number" placeholder="Price ($)" value={newServicePrice} onChange={e => setNewServicePrice(e.target.value)} />
-                    <Input type="number" placeholder="Duration (mins)" value={newServiceDuration} onChange={e => setNewServiceDuration(e.target.value)} />
+                    <div className="flex-1">
+                      <Input type="number" placeholder="Price ($)" value={newServicePrice} onChange={e => setNewServicePrice(e.target.value)} className={serviceErrors.price ? 'border-destructive' : ''} />
+                      {serviceErrors.price && <p className="text-xs text-destructive mt-1">{serviceErrors.price}</p>}
+                    </div>
+                    <div className="flex-1">
+                      <Input type="number" placeholder="Duration (mins)" value={newServiceDuration} onChange={e => setNewServiceDuration(e.target.value)} className={serviceErrors.duration ? 'border-destructive' : ''} />
+                      {serviceErrors.duration && <p className="text-xs text-destructive mt-1">{serviceErrors.duration}</p>}
+                    </div>
                   </div>
 
                   <div className="space-y-4 border p-3 rounded-lg bg-muted/20">
@@ -522,7 +603,9 @@ export default function AdminDashboardPage() {
                       </div>
                     )}
                   </div>
-                  <Button onClick={handleCreateService} className="w-full">Create Service</Button>
+                  <Button onClick={handleCreateService} className="w-full" disabled={creatingService}>
+                    {creatingService ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 'Create Service'}
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -624,8 +707,8 @@ export default function AdminDashboardPage() {
                           </div>
                         </DialogContent>
                       </Dialog>
-                      <Button variant="destructive" size="icon" className="h-10 w-10 shrink-0" onClick={() => handleDeleteService(service._id)}>
-                        <Trash2 className="w-4 h-4" />
+                      <Button variant="destructive" size="icon" className="h-10 w-10 shrink-0" onClick={() => handleDeleteService(service._id)} disabled={deletingServiceId === service._id}>
+                        {deletingServiceId === service._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </Button>
                     </div>
                   </div>
@@ -658,23 +741,27 @@ export default function AdminDashboardPage() {
                   <p className="text-xs text-muted-foreground mt-1">Joined: {format(new Date(usr.createdAt), "PP")}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <select
-                    className="text-sm border rounded p-2 bg-background font-medium"
-                    value={usr.role}
-                    onChange={(e) => handleUpdateUserRole(usr._id, e.target.value)}
-                    disabled={usr._id === user?._id}
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  {updatingRoleId === usr._id ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  ) : (
+                    <select
+                      className="text-sm border rounded p-2 bg-background font-medium"
+                      value={usr.role}
+                      onChange={(e) => handleUpdateUserRole(usr._id, e.target.value)}
+                      disabled={usr._id === user?._id}
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  )}
                   <Button
                     variant="destructive"
                     size="icon"
                     onClick={() => handleDeleteUser(usr._id)}
-                    disabled={usr._id === user?._id}
+                    disabled={usr._id === user?._id || deletingUserId === usr._id}
                     title={usr._id === user?._id ? "Cannot delete yourself" : "Delete user"}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    {deletingUserId === usr._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   </Button>
                 </div>
               </Card>

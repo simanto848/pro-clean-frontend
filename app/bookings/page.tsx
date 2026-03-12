@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { CalendarDays, DollarSign, Clock, Receipt, CheckCircle2, ChevronRight } from "lucide-react";
+import { CalendarDays, DollarSign, Clock, Receipt, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
 
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
@@ -37,6 +37,7 @@ export default function MyBookingsPage() {
   const { isAuthenticated, user, isInitialized } = useAuthStore();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -113,6 +114,7 @@ export default function MyBookingsPage() {
 
               const handleCancelBooking = async (id: string) => {
                 if (!confirm("Are you sure you want to cancel this booking?")) return;
+                setCancellingId(id);
                 try {
                   const res = await api.patch(`/bookings/${id}/cancel`, { status: "cancelled" });
                   if (res.data.success) {
@@ -121,6 +123,8 @@ export default function MyBookingsPage() {
                   }
                 } catch (error) {
                   toast.error("Failed to cancel booking");
+                } finally {
+                  setCancellingId(null);
                 }
               };
 
@@ -176,8 +180,13 @@ export default function MyBookingsPage() {
                                 size="sm" 
                                 className="text-destructive hover:bg-destructive/10 border-destructive/20"
                                 onClick={() => handleCancelBooking(booking._id)}
+                                disabled={cancellingId === booking._id}
                               >
-                                Cancel
+                                {cancellingId === booking._id ? (
+                                  <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Cancelling...</>
+                                ) : (
+                                  'Cancel'
+                                )}
                               </Button>
                             )}
                             {booking.service && (

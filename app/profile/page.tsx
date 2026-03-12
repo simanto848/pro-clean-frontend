@@ -36,6 +36,11 @@ export default function ProfilePage() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
 
+  // Validation errors
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {
       router.push("/login");
@@ -50,8 +55,13 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNameError("");
     if (!name.trim()) {
-      toast.error("Please provide a name");
+      setNameError("Name is required");
+      return;
+    }
+    if (name.trim().length < 2) {
+      setNameError("Name must be at least 2 characters");
       return;
     }
     try {
@@ -70,8 +80,13 @@ export default function ProfilePage() {
 
   const handleRequestEmailChange = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEmailError("");
     if (!newEmail.trim()) {
-      toast.error("Please enter the new email address");
+      setEmailError("Email address is required");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim())) {
+      setEmailError("Please enter a valid email address");
       return;
     }
     try {
@@ -115,16 +130,17 @@ export default function ProfilePage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPasswordError("");
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error("Please fill in all password fields");
+      setPasswordError("All password fields are required");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("New password and confirmation do not match");
+      setPasswordError("New password and confirmation do not match");
       return;
     }
     if (newPassword.length < 6) {
-      toast.error("New password must be at least 6 characters");
+      setPasswordError("New password must be at least 6 characters");
       return;
     }
     try {
@@ -218,11 +234,12 @@ export default function ProfilePage() {
                   <Input
                     id="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="pl-10 bg-muted/50 border-transparent focus:border-primary focus:bg-background transition-colors rounded-xl h-12"
+                    onChange={(e) => { setName(e.target.value); setNameError(""); }}
+                    className={`pl-10 bg-muted/50 border-transparent focus:border-primary focus:bg-background transition-colors rounded-xl h-12 ${nameError ? 'border-destructive' : ''}`}
                     placeholder="Your name"
                   />
                 </div>
+                {nameError && <p className="text-sm text-destructive">{nameError}</p>}
               </div>
 
               <Button
@@ -265,11 +282,12 @@ export default function ProfilePage() {
                       id="newEmail"
                       type="email"
                       value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
-                      className="pl-10 bg-muted/50 border-transparent focus:border-primary focus:bg-background transition-colors rounded-xl h-12"
+                      onChange={(e) => { setNewEmail(e.target.value); setEmailError(""); }}
+                      className={`pl-10 bg-muted/50 border-transparent focus:border-primary focus:bg-background transition-colors rounded-xl h-12 ${emailError ? 'border-destructive' : ''}`}
                       placeholder="new@email.com"
                     />
                   </div>
+                  {emailError && <p className="text-sm text-destructive">{emailError}</p>}
                 </div>
                 <Button
                   type="submit"
@@ -408,6 +426,7 @@ export default function ProfilePage() {
                 {newPassword && confirmPassword && newPassword !== confirmPassword && (
                   <p className="text-sm text-destructive mt-1">Passwords do not match</p>
                 )}
+                {passwordError && <p className="text-sm text-destructive mt-1">{passwordError}</p>}
               </div>
 
               <Button
