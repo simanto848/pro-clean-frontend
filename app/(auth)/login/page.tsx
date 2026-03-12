@@ -33,7 +33,7 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, setUser, isAuthenticated, isInitialized } = useAuthStore();
+  const { user, setUser, setToken, isAuthenticated, isInitialized } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
@@ -61,6 +61,7 @@ export default function LoginPage() {
       
       if (res.data.success) {
         toast.success("Login successful!");
+        setToken(res.data.data.token);
         setUser(res.data.data.user);
         
         const loggedInUser = res.data.data.user;

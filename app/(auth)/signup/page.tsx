@@ -34,7 +34,7 @@ const formSchema = z.object({
 
 export default function SignupPage() {
   const router = useRouter();
-  const { user, setUser, isAuthenticated, isInitialized } = useAuthStore();
+  const { user, setUser, setToken, isAuthenticated, isInitialized } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -63,6 +63,7 @@ export default function SignupPage() {
       
       if (res.data.success) {
         toast.success("Account created! Please verify your email.");
+        setToken(res.data.data.token);
         setUser(res.data.data.user);
         
         if (res.data.data.user.role === "admin") {
