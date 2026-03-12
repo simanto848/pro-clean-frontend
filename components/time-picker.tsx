@@ -13,17 +13,38 @@ import {
 interface TimePickerProps {
   value: string
   onChange: (value: string) => void
+  selectedDate?: Date
 }
 
 const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'))
 const minutes = ["00", "15", "30", "45"]
 const periods = ["AM", "PM"]
 
-export function TimePicker({ value, onChange }: TimePickerProps) {
+export function TimePicker({ value, onChange, selectedDate }: TimePickerProps) {
   const [h, m, p] = value ? [value.substring(0, 2), value.substring(3, 5), value.substring(6, 8)] : ["09", "00", "AM"]
   const updateTime = (newH: string, newM: string, newP: string) => {
     onChange(`${newH}:${newM} ${newP}`)
   }
+
+  const isPastTime = (hour: string, min: string, period: string) => {
+    if (!selectedDate) return false;
+    
+    const today = new Date();
+    const isToday = selectedDate.getDate() === today.getDate() &&
+                    selectedDate.getMonth() === today.getMonth() &&
+                    selectedDate.getFullYear() === today.getFullYear();
+    
+    if (!isToday) return false;
+
+    let hNum = parseInt(hour);
+    if (period === "PM" && hNum < 12) hNum += 12;
+    if (period === "AM" && hNum === 12) hNum = 0;
+    
+    const slotTime = new Date();
+    slotTime.setHours(hNum, parseInt(min), 0, 0);
+    
+    return slotTime < today;
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -43,7 +64,13 @@ export function TimePicker({ value, onChange }: TimePickerProps) {
             </SelectTrigger>
             <SelectContent>
               {hours.map((hour) => (
-                <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                <SelectItem 
+                  key={hour} 
+                  value={hour}
+                  disabled={isPastTime(hour, m, p)}
+                >
+                  {hour}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -57,7 +84,13 @@ export function TimePicker({ value, onChange }: TimePickerProps) {
             </SelectTrigger>
             <SelectContent>
               {minutes.map((min) => (
-                <SelectItem key={min} value={min}>{min}</SelectItem>
+                <SelectItem 
+                  key={min} 
+                  value={min}
+                  disabled={isPastTime(h, min, p)}
+                >
+                  {min}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -71,7 +104,13 @@ export function TimePicker({ value, onChange }: TimePickerProps) {
             </SelectTrigger>
             <SelectContent>
               {periods.map((period) => (
-                <SelectItem key={period} value={period}>{period}</SelectItem>
+                <SelectItem 
+                  key={period} 
+                  value={period}
+                  disabled={isPastTime(h, m, period)}
+                >
+                  {period}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
