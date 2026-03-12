@@ -15,6 +15,9 @@ api.interceptors.response.use((response) => {
     const token = response.headers['x-csrf-token'];
     if (token) {
         csrfToken = token;
+        if (process.env.NODE_ENV === 'development') {
+            console.log('🛡️ CSRF Token synchronized via header');
+        }
     }
     return response;
 });
